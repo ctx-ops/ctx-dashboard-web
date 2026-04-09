@@ -3202,18 +3202,11 @@ function fpUpload(wm,input){
   delete _fpState[wm]; // clear cache so it reloads
   input.value=''; // reset file input
 
-  // Upload to Supabase Storage using service key (bypasses RLS)
-  const SVC='sb_secret_C6bWaApuyukeTjqOkdEpmA_19Bt_fjp';
-  const uploadUrl=`${SB_URL}/storage/v1/object/floor-plans/${wm}/A1.pdf`;
+  // Upload via Edge Function (service key stays server-side)
   file.arrayBuffer().then(buf=>{
-    return _origFetch(uploadUrl,{
+    return _origFetch(SB_URL+'/functions/v1/upload-floorplan?wm='+wm,{
       method:'POST',
-      headers:{
-        'apikey':SVC,
-        'Authorization':'Bearer '+SVC,
-        'Content-Type':'application/pdf',
-        'x-upsert':'true',
-      },
+      headers:{..._sbHeaders(),'Content-Type':'application/pdf'},
       body:buf
     });
   }).then(r=>{
