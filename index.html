@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CTX Operations — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--bg2:#0f1420;--bg3:#151c2e;--bg4:#1a2236;
+  --border:#1e2d47;--txt:#e2e8f5;--txt2:#8fa3c4;--txt3:#5a7299;
+  --blue:#3b82f6;--blue2:#60a5fa;--green:#22c55e;--red:#ef4444;
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center}
+.wrap{width:100%;max-width:400px;padding:24px}
+.logo{text-align:center;margin-bottom:32px}
+.logo-text{font-size:28px;font-weight:900;letter-spacing:-1px}
+.logo-text span{color:var(--blue)}
+.logo-sub{font-size:13px;color:var(--txt2);margin-top:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px}
+.tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:24px;gap:3px}
+.tab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--txt2);transition:all .15s}
+.tab.active{background:var(--blue);color:#fff}
+.form-group{margin-bottom:16px}
+label{display:block;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--txt);font-family:'Inter',sans-serif;outline:none;transition:border .15s}
+input:focus{border-color:var(--blue)}
+input::placeholder{color:var(--txt3)}
+.btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-top:8px}
+.btn:hover{background:var(--blue2);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.msg{font-size:12px;margin-top:12px;text-align:center;min-height:18px}
+.msg.err{color:var(--red)}
+.msg.ok{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:20px 0;position:relative}
+.divider span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg2);padding:0 10px;font-size:11px;color:var(--txt3)}
+.forgot{font-size:12px;color:var(--txt3);text-align:right;cursor:pointer;margin-top:-8px;margin-bottom:4px}
+.forgot:hover{color:var(--blue2)}
+.notice{font-size:11px;color:var(--txt3);line-height:1.6;margin-top:16px;text-align:center;padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-text">CTX<span>.</span>ops</div>
+    <div class="logo-sub">Operations Command Center</div>
+  </div>
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" id="tab-signup" onclick="switchTab('signup')">Create Account</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@ctxcontractors.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <div class="forgot" onclick="forgotPassword()">Forgot password?</div>
+      <button class="btn" id="btn-login" onclick="doLogin()">Sign In</button>
+      <div class="msg" id="msg-login"></div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="form-signup" style="display:none">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your name"/>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="you@ctxcontractors.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-pass" placeholder="Min 8 characters" autocomplete="new-password"/>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="signup-pass2" placeholder="Repeat password" autocomplete="new-password"/>
+      </div>
+      <button class="btn" id="btn-signup" onclick="doSignup()">Create Account</button>
+      <div class="msg" id="msg-signup"></div>
+      <div class="notice">
+        Accounts are reviewed by Jaime before dashboard access is granted.
+        You'll receive a confirmation email once approved.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://xvcphvjycjtbgymugtct.supabase.co';
+const SB_KEY = 'sb_publishable_pV1wYW361UNhzmPz-3ltzg_hOhfIv7g';
+
+// Redirect if already logged in
+const stored = localStorage.getItem('ctx_session');
+if (stored) {
+  try {
+    const s = JSON.parse(stored);
+    if (s.access_token && s.expires_at > Date.now() / 1000) {
+      window.location.href = 'dashboard.html';
+    }
+  } catch(e) { localStorage.removeItem('ctx_session'); }
+}
+
+function switchTab(t) {
+  document.getElementById('form-login').style.display  = t === 'login'  ? '' : 'none';
+  document.getElementById('form-signup').style.display = t === 'signup' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',  t === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', t === 'signup');
+}
+
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + (type || '');
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Please wait...' : (btnId === 'btn-login' ? 'Sign In' : 'Create Account');
+}
+
+async function sbFetch(path, body) {
+  const r = await fetch(SB_URL + path, {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return { ok: r.ok, status: r.status, data: await r.json() };
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) { setMsg('msg-login', 'Email and password required.', 'err'); return; }
+  setLoading('btn-login', true);
+  setMsg('msg-login', '');
+  const { ok, data } = await sbFetch('/auth/v1/token?grant_type=password', { email, password: pass });
+  setLoading('btn-login', false);
+  if (!ok) {
+    setMsg('msg-login', data.error_description || data.msg || 'Login failed.', 'err');
+  } else {
+    localStorage.setItem('ctx_session', JSON.stringify(data));
+    window.location.href = 'dashboard.html';
+  }
+}
+
+async function doSignup() {
+  const name  = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass  = document.getElementById('signup-pass').value;
+  const pass2 = document.getElementById('signup-pass2').value;
+  if (!name || !email || !pass) { setMsg('msg-signup', 'All fields required.', 'err'); return; }
+  if (pass !== pass2) { setMsg('msg-signup', 'Passwords do not match.', 'err'); return; }
+  if (pass.length < 8) { setMsg('msg-signup', 'Password must be at least 8 characters.', 'err'); return; }
+  setLoading('btn-signup', true);
+  setMsg('msg-signup', '');
+  const { ok, data } = await sbFetch('/auth/v1/signup', {
+    email, password: pass,
+    data: { full_name: name, role: 'pending' }
+  });
+  setLoading('btn-signup', false);
+  if (!ok) {
+    setMsg('msg-signup', data.msg || data.error_description || 'Signup failed.', 'err');
+  } else {
+    setMsg('msg-signup', 'Account created! Check your email to verify, then wait for Jaime to approve access.', 'ok');
+  }
+}
+
+async function forgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { setMsg('msg-login', 'Enter your email first.', 'err'); return; }
+  const { ok } = await sbFetch('/auth/v1/recover', { email });
+  setMsg('msg-login', ok ? 'Reset link sent — check your email.' : 'Could not send reset email.', ok ? 'ok' : 'err');
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const loginVisible = document.getElementById('form-login').style.display !== 'none';
+  if (loginVisible) doLogin(); else doSignup();
+});
+</script>
+</body>
+</html>
