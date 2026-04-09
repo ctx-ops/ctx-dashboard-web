@@ -12,7 +12,7 @@ const SB_KEY = 'sb_publishable_pV1wYW361UNhzmPz-3ltzg_hOhfIv7g';
 
 // Auth check — redirect to login if no valid session
 const _session = (() => { try { return JSON.parse(localStorage.getItem('ctx_session')); } catch(e) { return null; } })();
-if (!_session || !_session.access_token) { window.location.href = '/functions/v1/app'; }
+if (!_session || !_session.access_token) { window.location.href = './index.html'; }
 
 function _sbHeaders() {
   return {
@@ -63,7 +63,7 @@ window.DASHBOARD_DATA = {};
 (async () => {
   try {
     const r = await _origFetch(SB_URL + '/rest/v1/dashboard_projects?select=*&order=status.asc,start_date.asc', { headers: _sbHeaders() });
-    if (r.status === 401) { localStorage.removeItem('ctx_session'); window.location.href = '/functions/v1/app'; return; }
+    if (r.status === 401) { localStorage.removeItem('ctx_session'); window.location.href = './index.html'; return; }
     const rows = await r.json();
 
     // Cache all project data for fast /api/project/ intercept
